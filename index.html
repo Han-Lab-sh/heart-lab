@@ -573,14 +573,14 @@ var DRIVE_URL='';  /* shared Google Drive photo folder */
     var u=imgUrl(list(r.photo)[0]||'',600),ini=esc(initials(r.name));
     var pic=u?'<img class="mimg" src="'+esc(u)+'" alt="'+esc(r.name||'')+'" loading="lazy" referrerpolicy="no-referrer" data-ph="'+ini+'">':'<div class="mph" aria-hidden="true">'+ini+'</div>';
     return '<div class="mcard">'+pic+'<strong>'+esc(r.name||'')+'</strong>'+lines.filter(Boolean).map(function(x){return'<span>'+esc(x)+'</span>'}).join('')+'</div>'}
-  loadTab('Team',['category','name']).then(function(rows){
+  loadTab('Team',['name','!authors','!current']).then(function(rows){
     var grid=document.getElementById('teamgrid');if(!grid||!rows.length)return;
-    var known=['Postdoctoral researchers','Graduate students','Undergraduate researchers'];
+    rows.forEach(function(r){r.category=r.category||'Members'});var hasCat=rows.some(function(r){return r.category!=='Members'});var known=hasCat?['Postdoctoral researchers','Graduate students','Undergraduate researchers']:[];
     var extra=[];rows.forEach(function(r){var c=r.category||'';if(c&&!known.some(function(k){return k.toLowerCase()===c.toLowerCase()})&&extra.indexOf(c)<0)extra.push(c)});
     grid.className='teamwrap';
     grid.innerHTML=known.concat(extra).map(function(k){
       var m=rows.filter(function(r){return(r.category||'').toLowerCase()===k.toLowerCase()});
-      return '<section class="tcat"><h3>'+esc(k)+'</h3>'+(m.length?'<div class="tgrid">'+m.map(function(r){return mcard(r,[r.program,r.topic])}).join('')+'</div>':'<p class="tbd">TBD</p>')+'</section>'}).join('');
+      return '<section class="tcat"><h3>'+esc(k)+'</h3>'+(m.length?'<div class="tgrid">'+m.map(function(r){return mcard(r,[r.education||r.program,r.topic,r.email])}).join('')+'</div>':'<p class="tbd">TBD</p>')+'</section>'}).join('');
     hookImgs(grid)
   }).catch(function(){});
   loadTab('Alumni',['name','current','!category']).then(function(rows){
