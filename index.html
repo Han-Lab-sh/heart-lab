@@ -529,11 +529,12 @@ var DRIVE_URL='';  /* shared Google Drive photo folder */
       else f+=c}
     if(f!==''||row.length){row.push(f);rows.push(row)}
     return rows}
-  function loadTab(name){
+  function loadTab(name,need){
     return fetch('https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?headers=1&tqx=out:csv&sheet='+encodeURIComponent(name))
       .then(function(r){if(!r.ok)throw new Error(r.status);return r.text()})
       .then(function(t){var rows=parseCSV(t);if(!rows.length)return[];
         var h=rows[0].map(function(x){return x.trim().toLowerCase()});
+        if(need&&!need.every(function(k){return k.charAt(0)==='!'?h.indexOf(k.slice(1))<0:h.indexOf(k)>=0}))return[];
         return rows.slice(1).filter(function(r){return r.some(function(x){return x.trim()!==''})}).map(function(r){var o={};h.forEach(function(k,j){o[k]=(r[j]||'').trim()});return o})})}
   function num(s){return String(s||'').replace(/^(\d),(\d{3})$/,'$1$2')}
   function safeUrl(u){return /^https?:\/\//i.test(u)?esc(u):''}
@@ -557,7 +558,7 @@ var DRIVE_URL='';  /* shared Google Drive photo folder */
         d.setAttribute('aria-hidden','true');d.textContent=img.getAttribute('data-ph')||'';img.replaceWith(d)})})}
 
   /* ---- Publication ---- */
-  loadTab('Publication').then(function(rows){
+  loadTab('Publication',['authors','journal']).then(function(rows){
     var ol=document.getElementById('publist');if(!ol||!rows.length)return;
     ol.innerHTML=rows.map(function(r,i){
       var n=r.number||(rows.length-i)+'.';if(/^\d+$/.test(n))n+='.';
@@ -571,7 +572,7 @@ var DRIVE_URL='';  /* shared Google Drive photo folder */
     var u=imgUrl(list(r.photo)[0]||'',600),ini=esc(initials(r.name));
     var pic=u?'<img class="mimg" src="'+esc(u)+'" alt="'+esc(r.name||'')+'" loading="lazy" referrerpolicy="no-referrer" data-ph="'+ini+'">':'<div class="mph" aria-hidden="true">'+ini+'</div>';
     return '<div class="mcard">'+pic+'<strong>'+esc(r.name||'')+'</strong>'+lines.filter(Boolean).map(function(x){return'<span>'+esc(x)+'</span>'}).join('')+'</div>'}
-  loadTab('Team').then(function(rows){
+  loadTab('Team',['category','name']).then(function(rows){
     var grid=document.getElementById('teamgrid');if(!grid||!rows.length)return;
     var known=['Postdoctoral researchers','Graduate students','Undergraduate researchers'];
     var extra=[];rows.forEach(function(r){var c=r.category||'';if(c&&!known.some(function(k){return k.toLowerCase()===c.toLowerCase()})&&extra.indexOf(c)<0)extra.push(c)});
@@ -581,7 +582,7 @@ var DRIVE_URL='';  /* shared Google Drive photo folder */
       return '<section class="tcat"><h3>'+esc(k)+'</h3>'+(m.length?'<div class="tgrid">'+m.map(function(r){return mcard(r,[r.program,r.topic])}).join('')+'</div>':'<p class="tbd">TBD</p>')+'</section>'}).join('');
     hookImgs(grid)
   }).catch(function(){});
-  loadTab('Alumni').then(function(rows){
+  loadTab('Alumni',['name','current','!category']).then(function(rows){
     var grid=document.getElementById('alumnigrid');if(!grid||!rows.length)return;
     grid.className='teamwrap';
     grid.innerHTML='<section class="tcat"><h3>Alumni</h3><div class="tgrid">'+rows.map(function(r){return mcard(r,[[r.degree,r.years].filter(Boolean).join(', '),r.current])}).join('')+'</div></section>';
@@ -608,7 +609,7 @@ var DRIVE_URL='';  /* shared Google Drive photo folder */
     var u=safeUrl(r.link||'');
     modal.querySelector('.mcontent').innerHTML=(r.date||r.author?'<time>'+esc(r.date||'')+(r.date&&r.author?' &middot; ':'')+esc(r.author||'')+'</time>':'')+'<h3>'+esc(r.title||'')+'</h3>'+paras+gal+(u?'<p><a class="mlink" href="'+u+'" target="_blank" rel="noopener noreferrer">Read more &#8599;</a></p>':'');
     modal.hidden=false;document.body.style.overflow='hidden';modal.querySelector('.mclose').focus()}
-  loadTab('News').then(function(rows){
+  loadTab('News',['title','!authors']).then(function(rows){
     var box=document.getElementById('newslist');if(!box||!rows.length)return;
     rows=rows.map(function(r){r.text=r.text||r.summary||'';r.detail=r.detail||r.details||'';return r}).filter(function(r){return!/^(no|n|false|0|hide|hidden)$/i.test(r.show||'')});
     if(!rows.length)return;
